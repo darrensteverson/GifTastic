@@ -29,17 +29,16 @@ $("#add-workout").on("click", function (event) {
   createButton();
 
 });
-$(document).on("click", ".workout");
 createButton();
-
-
 
 
 // Adding event listener to all buttons
 $(document).on("click", ".workout", function () {
 
   // queryURL with workout in the search
-  var queryURL = "https://api.giphy.com/v1/gifs/search?q=workouts&api_key=rAAIhnZOVdDGfx5e7XgcvmVohy8R723d&limit=5";
+  var workoutVal = $(this).data("workout");
+  var queryURL = "https://api.giphy.com/v1/gifs/search?q=" + workoutVal +
+                 "&api_key=rAAIhnZOVdDGfx5e7XgcvmVohy8R723d&limit=5";
 
   // Ajax request
   $.ajax({
@@ -48,26 +47,44 @@ $(document).on("click", ".workout", function () {
   })
   // data from the AJAX request comes back
     .then(function (response) {
+      var gifArray = response.data;
+      for (var i = 0; i < gifArray.length; i++) {
+        // Saving the image_original_url and animated property
+        var animatedImageUrl = gifArray[i].images.fixed_height.url;
+        var stillImageUrl = gifArray[i].images.fixed_height_still.url;
 
-      // Saving the image_original_url property
-      var imageUrl = response.data.image_original_url;
+      // Creating and storing an image tag
+        var figContainer = $("<figure>");
+        var workoutImage = $("<img>");
+        var rating = $("<figcaption>");
+        var ratingText = gifArray[i].rating !== "" ?
+                        gifArray[i].rating.toUpperCase() :
+                        "Not rated";
 
-// Creating and storing an image tag
-      var workoutImage = $("<img>");
+        // Setting the catImage src attribute to imageUrl
+        workoutImage.attr("src", stillImageUrl);
+        workoutImage.attr("alt", "workout image");
+        workoutImage.addClass("gif")
+                    .attr("data-state", "still")
+                    .attr("data-still", stillImageUrl)
+                    .attr("data-animate", animatedImageUrl);
+        rating.text("Rated: " + ratingText);
+        figContainer.append(workoutImage, rating);
 
-       // Setting the catImage src attribute to imageUrl
-      workoutImage.attr("src", imageUrl);
-      workoutImage.attr("alt", "workout image");
-
-      // prepending img to html gif-appear-here div
-      $("#gifs-appear-here").prepend(workoutImage);
-
+        // prepending img to html gif-appear-here div
+        $("#gifs-appear-here").prepend(figContainer);
+      }
     });
   });
 
+  // add event listener to dynamically created .gif image buttons
+  $(document).on("click", ".gif", function () {
+    if ($(this).data("state") === "still") {
+      $(this).attr("src", $(this).attr("data-animate"));
+      $(this).data("state", "animated");
+    } else {
+      $(this).attr("src", $(this).attr("data-still"));
+      $(this).data("state", "still");
 
-
-
-
-
-
+    }
+  });
